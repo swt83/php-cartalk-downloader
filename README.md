@@ -17,7 +17,7 @@ $ php run
 
 Rerunning the app will auto-skip the files that already exist on your hard drive.  It took me about 2 hours to download the available archive of 2008-2018.  The total filesize was 15 GB.
 
-# Cleaning
+## Cleaning
 
 I like to nuke the ID3 metadata on the files.
 
