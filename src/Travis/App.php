@@ -3,6 +3,7 @@
 namespace Travis;
 
 use Travis\CLI;
+use Travis\Date;
 use Sunra\PhpSimple\HtmlDomParser;
 
 class App
@@ -13,7 +14,7 @@ class App
 		$num = 1;
 
 		// while loop
-		while ($num < 1000)
+		while ($num < 630)
 		{
 			// get links
 			$shows = static::get_shows($num);
@@ -21,17 +22,15 @@ class App
 			// foreach...
 			foreach ($shows as $show)
 			{
-				// parse info
-				$string = $show['title'];
-				$parts = explode(': ', $string);
-				$title = trim($parts[1]);
-				$count = trim(str_ireplace('#', '', $parts[0]));
-				$url = $show['link'];
-				$year = (int) substr($count, 0, 2);
-				$year = $year > 50 ? 1900+$year : 2000+$year;
+				// get show information
+				$info = static::get_show_info($show);
 
-				// submit for download
-				static::download($year, $count, $title, $url);
+				// error protect...
+				if ($info['year'] >= 2008 and $info['count'] > 0)
+				{
+					// submit for download
+					static::download($info['year'], $info['date'], $info['count'], $info['title'], $show['link'], $show['description']);
+				}
 			}
 
 			// increment
@@ -40,6 +39,28 @@ class App
 
 		// report
 		CLI::write('Done.');
+	}
+
+	protected static function get_show_info(array $show)
+	{
+		// parse info
+		$parts = explode(': ', $show['title']);
+		$title = trim($parts[1]);
+		$count = trim(str_ireplace('#', '', $parts[0]));
+		$year = (int) substr($count, 0, 2);
+		$year = $year > 50 ? 1900+$year : 2000+$year;
+		$date = Date::make($show['date']);
+
+		// set
+		$info = [
+			'title' => $title,
+			'count' => (int) $count,
+			'year' => (int) $year,
+			'date' => $date->time() ? $date->format('%Y%m%d') : '?',
+		];
+
+		// return
+		return $info;
 	}
 
 	protected static function get_shows($num)
@@ -62,7 +83,27 @@ class App
 		{
 			if ($element->class === 'audio-module-title')
 			{
-				$titles[] = $element->plaintext;
+				$titles[] = trim($element->plaintext);
+			}
+		}
+
+		// find the descriptions
+		$descriptions = [];
+		foreach($html->find('p') as $element)
+		{
+			if ($element->class === 'teaser')
+			{
+				$descriptions[] = trim($element->plaintext);
+			}
+		}
+
+		// find the dates
+		$dates = [];
+		foreach($html->find('h3') as $element)
+		{
+			if ($element->class === 'episode-date')
+			{
+				$dates[] = trim($element->plaintext);
 			}
 		}
 
@@ -72,7 +113,7 @@ class App
 		{
 			if ($element->class === 'audio-module-listen')
 			{
-				$links[] = $element->href;
+				$links[] = trim($element->href);
 			}
 		}
 
@@ -81,8 +122,10 @@ class App
 		foreach ($links as $k => $v)
 		{
 			$final[] = [
-				'title' => $titles[$k],
 				'link' => $links[$k],
+				'title' => $titles[$k],
+				'date' => $dates[$k],
+				'description' => $descriptions[$k],
 			];
 		}
 
@@ -90,10 +133,10 @@ class App
 		return $final;
 	}
 
-	protected static function download($year, $count, $title, $url)
+	protected static function download($year, $date, $count, $title, $url, $description)
 	{
 		// set filename
-		$filename = 'CarTalk - #'.str_pad($count, 4, 0, STR_PAD_LEFT).' - '.$title.'.mp3';
+		$filename = 'CarTalk - #'.str_pad($count, 4, 0, STR_PAD_LEFT).' - '.$title.' ('.$date.').mp3';
 
 		// set path
 		$path = path('storage/'.$year.'/'.$filename);
@@ -115,6 +158,9 @@ class App
 			{
 				// save file
 				file_put_contents($path, $contents);
+
+				// save description file
+				#file_put_contents(str_ireplace('.mp3', '.txt', $path), $description);
 
 				// report
 				CLI::info($path);

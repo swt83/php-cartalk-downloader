@@ -31,6 +31,7 @@
         "travis/dump": "dev-master",
         "travis/cli": "1.0.*",
         "travis/ex": "1.0.*",
+        "travis/date": "dev-master",
         "sunra/php-simple-html-dom-parser": "1.5.2"
     },
     "autoload": {
