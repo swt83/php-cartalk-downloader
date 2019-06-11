@@ -14,7 +14,7 @@ class App
 		$num = 1;
 
 		// while loop
-		while ($num < 630)
+		while ($num < 1000)
 		{
 			// get links
 			$shows = static::get_shows($num);
@@ -43,12 +43,73 @@ class App
 
 	protected static function get_show_info(array $show)
 	{
-		// parse info
+		// parse title
 		$parts = explode(': ', $show['title']);
-		$title = trim($parts[1]);
-		$count = trim(str_ireplace('#', '', $parts[0]));
+		if (sizeof($parts) === 2)
+		{
+			// title type 1
+			$type = 1;
+			$title = trim($parts[1]);
+			$count = trim(str_ireplace(['Car Talk', '#'], ['', ''], $parts[0]));
+
+			// catch oddity
+			if (strlen($count) !== 4)
+			{
+				$type = '1b';
+				$title = trim($parts[0]);
+				$count = trim(str_ireplace(['Car Talk', '#'], ['', ''], $parts[1]));
+
+				// catch oddity
+				if (strlen($count) !== 4)
+				{
+					$type = '1c';
+					$title = $show['date'];
+					preg_match('/[0-9]+/', $count, $matches);
+					$count = $matches[0];
+				}
+			}
+		}
+		else
+		{
+			// title type 2
+			$type = 2;
+			$title = $show['date'];
+			preg_match('/[0-9]+/', $show['title'], $matches);
+			$count = $matches[0];
+
+			// catch oddity
+			if (strlen($count) !== 4)
+			{
+				$type = '2b';
+				$parts = explode('#', $show['title']);
+				$count = trim($parts[1]);
+
+				// catch oddity
+				if (strlen($count) !== 4)
+				{
+					$type = '2c';
+					$parts = explode(' ', $count);
+					$count = trim($parts[0]);
+				}
+			}
+		}
+
+		// catch errors...
+		if (!$title or !$count or strlen($count) !== 4)
+		{
+			x($show);
+			CLI::write('');
+			CLI::error('title = '.$title);
+			CLI::error('count = '.$count);
+			CLI::write('');
+			CLI::fatal('Invalid title (type='.$type.').');
+		}
+
+		// figure year from count
 		$year = (int) substr($count, 0, 2);
 		$year = $year > 50 ? 1900+$year : 2000+$year;
+
+		// make
 		$date = Date::make($show['date']);
 
 		// set

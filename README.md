@@ -15,4 +15,12 @@ $ composer update
 $ php run
 ```
 
-Rerunning the app will auto-skip the files that already exist on your hard drive.  It took me about 24 hours to download the entire archive.  The total filesize was 130 GB.
+Rerunning the app will auto-skip the files that already exist on your hard drive.  It took me about 2 hours to download the available archive of 2008-2018.  The total filesize was 15 GB.
+
+# Cleaning
+
+I like to nuke the ID3 metadata on the files.
+
+```
+$ id3v2 -D */*.mp3
+```
