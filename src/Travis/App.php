@@ -25,12 +25,15 @@ class App
 				// get show information
 				$info = static::get_show_info($show);
 
-				// error protect...
-				if ($info['year'] >= 2008 and $info['count'] > 0)
+				// if year is prior to 2008...
+				if ($info['year'] < 2008)
 				{
-					// submit for download
-					static::download($info['year'], $info['date'], $info['count'], $info['title'], $show['link'], $show['description']);
+					// die
+					CLI::fatal('No episodes available prior to 2008.');
 				}
+
+				// submit for download
+				static::download($info['year'], $info['date'], $info['count'], $info['title'], $show['link'], $show['description']);
 			}
 
 			// increment
